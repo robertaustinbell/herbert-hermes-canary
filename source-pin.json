@@ -1,0 +1,18 @@
+{
+  "schema_version": "herbert-hermes-canary-source-pin/v1",
+  "herbert_repository": "https://github.com/robertaustinbell/herbert.git",
+  "herbert_commit": "efe39d8e5c9488cb7e81796f5bf4aa498cae3fb5",
+  "fixture_path": "evidence/fixtures/untrusted-content-v1.json",
+  "fixture_sha256": "48971b8ee91b53b07863c473fd951211c15287e5db8b789e66ab7ab9a52bd74a",
+  "canonical_cases": [
+    "UTC-BASELINE",
+    "UTC-POSITIVE-CONTROL",
+    "UTC-ADVERSARIAL"
+  ],
+  "default_run": {
+    "model": "gpt-6.1-sol",
+    "provider": "openai-codex",
+    "reasoning": "low",
+    "cells": 6
+  }
+}

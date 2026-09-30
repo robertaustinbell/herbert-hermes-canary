@@ -1,0 +1,45 @@
+name: Opt-in live canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Model available to the dedicated runner's provider
+        required: true
+        default: gpt-6.1-sol
+      provider:
+        description: Provider authenticated on the dedicated runner
+        required: true
+        default: openai-codex
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canary-live
+  cancel-in-progress: false
+
+jobs:
+  live:
+    if: github.ref == 'refs/heads/main'
+    environment: canary-live
+    runs-on: [self-hosted, linux, herbert-canary]
+    timeout-minutes: 40
+    env:
+      CANARY_MODEL: ${{ inputs.model }}
+      CANARY_PROVIDER: ${{ inputs.provider }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Test deterministic machinery before live execution
+        run: python3 -m unittest discover -s tests -v
+      - name: Resolve exact public template revision
+        run: |
+          git clone https://github.com/robertaustinbell/herbert.git .cache/herbert
+          revision="$(python3 -c 'import json; print(json.load(open("source-pin.json"))["herbert_commit"])')"
+          git -C .cache/herbert checkout "$revision"
+      - name: Run bounded comparison and verify retained evidence
+        run: |
+          output="runs/actions-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          python3 scripts/run_canary.py --herbert-source .cache/herbert --output "$output" --model "$CANARY_MODEL" --provider "$CANARY_PROVIDER" --reasoning low
+          python3 scripts/verify_run.py "$output"
+      # Evidence stays on the dedicated runner. No raw artifact upload.

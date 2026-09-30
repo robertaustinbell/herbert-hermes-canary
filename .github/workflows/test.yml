@@ -1,0 +1,25 @@
+name: Canary harness tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic:
+    strategy:
+      matrix:
+        python: ["3.9", "3.11", "3.14"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Exercise installer, scorer, error paths, and CLI
+        run: python3 -m unittest discover -s tests -v
+      - name: Compile Python
+        run: python3 -m compileall -q herbert_canary scripts tests
