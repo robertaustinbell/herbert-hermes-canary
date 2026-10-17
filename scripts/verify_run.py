@@ -18,7 +18,15 @@ def main() -> int:
     parser.add_argument("run_directory", type=Path)
     args = parser.parse_args()
     try:
-        manifest = json.loads((args.run_directory / "manifest.json").read_text())
+        from herbert_canary.boundary_tools import loads
+        manifest = loads((args.run_directory / "manifest.json").read_text())
+        if manifest.get('schema_version') == 'consequential-boundary-run/v1':
+            from herbert_canary.boundary_verify import verify_boundary
+            validation = verify_boundary(args.run_directory)
+            state = validation['terminal_state']
+            result = {'passed':'pass','failed':'fail'}.get(state,'error')
+            print(json.dumps({'result':result,'validation':validation},indent=2,sort_keys=True))
+            return {'pass':0,'fail':1,'error':2}[result]
         validation = validate_run_bundle(args.run_directory, manifest)
         summary = json.loads((args.run_directory / "summary.json").read_text())
     except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:

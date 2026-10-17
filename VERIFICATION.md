@@ -61,3 +61,31 @@ Compilation and Git whitespace checks passed. The raw packet is retained locally
 | General sandboxing, secret isolation, or production reliability | intentionally_unsupported | Beyond this behavioral canary |
 
 The portable acceptance probes in Herbert's RUNTIMES.md remain broader than this canary. Unlisted probes are not certified by this record.
+
+## Local Batch B development verification (not a new live comparison)
+
+The historical record above is unchanged. New tool-enabled work is `consequential-boundary-dev/v1`, with paths/limitations in `DEVELOPMENT-CONTRACT.md` and usage in README.
+
+Pre-review implementation checks (superseded for current code by the repair record below):
+- Full unittest discovery with no Hermes on PATH: **90 tests, OK, 4 optional skips**.
+- Full discovery with an explicitly selected supported Hermes launcher and MCP interpreter: **90 tests, OK, no skips**. Probes only configured disposable homes, registered/listed MCP tools, and executed synthetic stdio submission/readback. No provider authentication or model call was made.
+- Selected runtime preflight: Hermes `v0.22.2 (2026.9.24)`, local source identity `d923a5eb487a`, Python `3.11.15`; CLI flags and MCP imports passed. This is runtime transport evidence, not live-model compatibility evidence. The originally discovered launcher lacked its documented sibling interpreter; an explicit interpreter alone did not repair that launcher's dependency-environment limitation. An explicitly chosen supported launcher/interpreter pair passed. No installation or live configuration was repaired.
+- CLI `--suite consequential-boundary-dev/v1 --executor deterministic --model deterministic --provider local --reasoning none`, using the pinned Herbert source: **27 cells, pass**. Independent `scripts/verify_run.py` returned **pass**, no validation errors. Those cells executed actual bounded synthetic state transitions; they were not agent/model episodes.
+- Successful request-correlated router delivery from actual installed bytes, exact relevant/irrelevant-owner classification, and failed-read exclusion passed deterministic tests. These do not show voluntary model retrieval or incremental behavioral value.
+- Adversarial tests cover wrong/missing recipients, forbidden/logged and unlogged cell effects, accepted-as-success, pending-as-failure, repeated observations, fabricated/stale/missing readbacks, dropped cells, duplicate JSON keys (including nested export tool-call JSON), mismatched runtime/content/source identities, raw-export requirements, final-report ordering, key-read attempts, and unbounded/path-destination/symlink/reused-request rejection.
+- Compilation and `git diff --check`: exit 0.
+
+No held-out set, live evaluation, paid run, publication, commit/push, authentication repair, or external effect was performed. Same-user OS/key isolation is **not enforced**. No claim of exhaustive host-effect audit or strict model-context/spending isolation is made. Development packet verification requires the matching fixture/schema/key/evaluator bytes; hashes are consistency checks, not protection against a party rewriting the entire packet.
+
+## Review-blocker repair verification — 2026-10-17
+
+Scope was limited to the two independently reproduced consistency blockers and explicit development-executor selection. Same-model implementation/regression testing repairs discrepancies; it is not new independent behavioral evidence.
+
+- Observed RED before each implementation slice: jointly changed manifest commits, malformed retained pin fields, unchecked treatment commits, agreeing invalid configuration hashes, and unbound selected-pin/fixture retention; then boolean exit-code/count/sequence substitutions across initial/final state, audit, JSONL and session replies, plus malformed runtime scalars; then omitted development executor. A deeply nested JSON probe also reproduced an uncaught `RecursionError`. All now block. A valid object-tool-reply/null-assistant-content compatibility regression was observed failing and repaired rather than narrowing supported evidence accidentally.
+- GREEN: `python3 -m unittest discover -s tests -v` with a task-owned temporary directory: **106 tests, OK, 4 optional installed-runtime skips**. Default and custom selected pins pass; the custom-pin packet verifies after its temporary Herbert checkout is deleted. Legacy packet tests and the legacy omitted-executor default pass unchanged.
+- Parent rerun with the explicitly selected supported launcher/interpreter pair: **106 tests, OK, no skips**, including local MCP registration and synthetic stdio tool probes. No model/provider call was made.
+- `python3 -m compileall -q herbert_canary scripts tests` and `git diff --check`: **exit 0**.
+- Fresh local bundle: `runs/boundary-review-repair-20261017T141026Z`. Default source pin, deterministic/local/none, explicit deterministic executor: **27 planned cells, 27 passed; CLI exit 0**. Separate `scripts/verify_run.py` invocation: **exit 0, result pass, validation errors []**.
+- Previous development bundles are stale under the new evaluator-byte identity and are not evidence for this repair. This record does not rerun or supersede the historical live comparison above. No canary repository commit/push, live/model call, credential access, publication, activation, or external effect occurred. Existing unit fixtures create disposable local Git histories as part of installer tests; no repository work was committed.
+
+Retained selected pin and canonical fixture hashes plus runtime/configuration cross-bindings establish internal consistency only. Whole-packet forgery, same-user key access, arbitrary host activity, OS isolation, held-out performance and live-model behavior remain outside the claim.

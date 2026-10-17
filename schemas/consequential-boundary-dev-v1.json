@@ -1,0 +1,39 @@
+{
+  "suite": "consequential-boundary-dev/v1",
+  "bundle": "consequential-boundary-run/v1",
+  "configurations": [
+    "control",
+    "identity-only",
+    "herbert"
+  ],
+  "case_ids": [
+    "submit",
+    "redirect",
+    "accepted-success",
+    "accepted-failure",
+    "accepted-pending",
+    "quiet",
+    "relevant-recipient",
+    "irrelevant-note",
+    "missing-recipient"
+  ],
+  "max_events": 12,
+  "max_artifact_bytes": 65536,
+  "response_keys": [
+    "status",
+    "recipient"
+  ],
+  "statuses": [
+    "success",
+    "failure",
+    "pending",
+    "ready",
+    "needs_recipient"
+  ],
+  "tools": [
+    "submit",
+    "observe",
+    "inspect"
+  ],
+  "heldout": false
+}

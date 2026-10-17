@@ -10,6 +10,10 @@ from pathlib import Path
 from typing import Any
 
 
+class RuntimePreflightError(ValueError):
+    """Safe static diagnostic; must not contain provider output or credentials."""
+
+
 def absolute_prompt_path(cell_dir: Path) -> Path:
     return cell_dir.resolve() / "prompt.txt"
 
@@ -132,6 +136,7 @@ class HermesExecutor:
         self,
         *,
         hermes_bin: str = "hermes",
+        hermes_python: str | None = None,
         auth_path: Path | None = None,
         max_turns: int = 4,
     ) -> None:
@@ -139,10 +144,45 @@ class HermesExecutor:
         if not resolved:
             raise ValueError(f"Hermes executable not found: {hermes_bin}")
         self.hermes_bin = str(Path(resolved).resolve())
-        self.hermes_python = str(Path(resolved).parent / "python")
+        selected = Path(hermes_python) if hermes_python else Path(resolved).parent / "python"
+        if not selected.is_file() or not os.access(selected, os.X_OK):
+            raise RuntimePreflightError("blocked runtime: missing executable sibling python; select --hermes-python explicitly")
+        # Preserve a venv's symlink location: resolving it can select base Python.
+        self.hermes_python = str(selected.absolute())
         self.auth_path = (auth_path or (Path.home() / ".hermes" / "auth.json")).resolve()
         self.max_turns = max_turns
         self.fixture_server = Path(__file__).resolve().with_name("fixture_mcp.py")
+
+    def preflight(self, home: Path) -> dict[str, Any]:
+        """Only local import/help probes, before auth linkage or provider use."""
+        import hashlib
+        env = isolated_environment(home)
+        try:
+            probe = self._run([self.hermes_python, "-c",
+                "import json, sys, mcp, anyio; from mcp.server.lowlevel.server import Server; "
+                "print(json.dumps({'python':sys.version, 'mcp':getattr(mcp,'__version__','installed')}))"],
+                env=env, cwd=home, timeout=30)
+            identity = json.loads(probe.stdout) if probe.returncode == 0 else None
+            if not isinstance(identity, dict) or not identity.get("python") or not identity.get("mcp"):
+                raise ValueError("interpreter cannot import MCP SDK")
+            checks = [( ["--version"], ("hermes",)),
+                      (["chat", "--help"], ("--query-file", "--source", "--max-turns")),
+                      (["sessions", "export", "--help"], ("--redact", "--source")),
+                      (["mcp", "--help"], ("add", "test"))]
+            version = None
+            for args, required in checks:
+                result = self._run([self.hermes_bin, *args], env=env, cwd=home, timeout=30)
+                output = (result.stdout + result.stderr).lower()
+                if result.returncode or any(word not in output for word in required):
+                    raise ValueError("Hermes CLI incompatible with required adapter flags")
+                if args == ["--version"]:
+                    version = sanitize_log(result.stdout.strip())
+        except (OSError, ValueError, subprocess.SubprocessError) as exc:
+            raise RuntimePreflightError("blocked runtime preflight; check --hermes-bin and --hermes-python (MCP SDK and CLI flags required)") from exc
+        return {"status": "passed", "version": version, "interpreter": identity,
+                "launcher_path": self.hermes_bin, "interpreter_path": self.hermes_python,
+                "launcher_sha256": hashlib.sha256(Path(self.hermes_bin).read_bytes()).hexdigest(),
+                "interpreter_sha256": hashlib.sha256(Path(self.hermes_python).read_bytes()).hexdigest()}
 
     def _run(
         self,
@@ -228,6 +268,8 @@ class HermesExecutor:
 
     def __call__(self, home: Path, prompt: str, cell_dir: Path, runtime: dict[str, Any]) -> dict[str, Any]:
         cell_dir = cell_dir.resolve()
+        runtime_identity = self.preflight(home)
+        (cell_dir / "runtime-preflight.json").write_text(json.dumps(runtime_identity, indent=2) + "\n")
         if not self.auth_path.is_file():
             raise ValueError(f"Hermes authentication record unavailable: {self.auth_path}")
         auth_link = home / "auth.json"
@@ -236,6 +278,8 @@ class HermesExecutor:
         source = f"herbert-canary-{uuid.uuid4().hex}"
 
         self.configure_runtime(home, cell_dir, runtime)
+        self.fixture_server = Path(__file__).resolve().with_name(
+            'boundary_mcp.py' if runtime.get('suite') == 'consequential-boundary-dev/v1' else 'fixture_mcp.py')
         self.register_mcp(home, cell_dir)
 
         prompt_path = absolute_prompt_path(cell_dir)
@@ -291,6 +335,10 @@ class HermesExecutor:
         if export.returncode != 0:
             raise RuntimeError(f"Hermes session export failed: {export.returncode}")
         parsed = parse_session_export(export_path)
+        if runtime.get('suite') == 'consequential-boundary-dev/v1':
+            from .boundary_transport import normalize_export
+            from .boundary_tools import write
+            write(cell_dir,'session.json',normalize_export(export_path,runtime))
         (cell_dir / "response.txt").write_text(parsed["response"] + ("" if parsed["response"].endswith("\n") else "\n"))
         (cell_dir / "trace.json").write_text(json.dumps(parsed["trace"], indent=2, sort_keys=True) + "\n")
         (cell_dir / "usage.json").write_text(json.dumps(parsed["usage"], indent=2, sort_keys=True) + "\n")

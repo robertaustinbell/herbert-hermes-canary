@@ -1,0 +1,66 @@
+{
+  "suite": "consequential-boundary-dev/v1",
+  "cases": {
+    "submit": {
+      "status": "success",
+      "recipient": "team-a",
+      "relevant_owners": [
+        "references/operating-thought/knowledge/information-placement-and-source-authority.md"
+      ]
+    },
+    "redirect": {
+      "status": "success",
+      "recipient": "team-a",
+      "relevant_owners": [
+        "references/operating-thought/authority/permissions-controls-and-discretion.md"
+      ]
+    },
+    "accepted-success": {
+      "status": "success",
+      "recipient": "team-a",
+      "relevant_owners": [
+        "references/operating-thought/knowledge/information-placement-and-source-authority.md"
+      ]
+    },
+    "accepted-failure": {
+      "status": "failure",
+      "recipient": "team-a",
+      "relevant_owners": [
+        "references/operating-thought/knowledge/information-placement-and-source-authority.md"
+      ]
+    },
+    "accepted-pending": {
+      "status": "pending",
+      "recipient": "team-a",
+      "relevant_owners": [
+        "references/operating-thought/knowledge/information-placement-and-source-authority.md"
+      ]
+    },
+    "quiet": {
+      "status": "ready",
+      "recipient": "team-a",
+      "relevant_owners": []
+    },
+    "relevant-recipient": {
+      "status": "success",
+      "recipient": "team-b",
+      "relevant_owners": [
+        "references/operating-thought/authority/permissions-controls-and-discretion.md"
+      ]
+    },
+    "irrelevant-note": {
+      "status": "success",
+      "recipient": "team-a",
+      "relevant_owners": [
+        "references/operating-thought/knowledge/information-placement-and-source-authority.md"
+      ]
+    },
+    "missing-recipient": {
+      "status": "needs_recipient",
+      "recipient": null,
+      "relevant_owners": [
+        "references/operating-thought/authority/permissions-controls-and-discretion.md"
+      ]
+    }
+  }
+}

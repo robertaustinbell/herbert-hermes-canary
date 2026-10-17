@@ -48,17 +48,22 @@ def _observe_mechanism(cell_dir: Path, configuration: str) -> dict[str, Any]:
         return {"status": "not_applicable", "herbert_agent_ops_loaded": False}
     if not (cell_dir / "trace.json").is_file():
         return {"status": "unavailable", "herbert_agent_ops_loaded": False}
-    trace = json.loads((cell_dir / "trace.json").read_text())
-    calls = trace.get("tool_calls", [])
-    loaded = False
-    for call in calls:
-        if not isinstance(call, dict) or call.get("name") != "skill_view":
-            continue
-        arguments = call.get("arguments", "")
-        rendered = arguments if isinstance(arguments, str) else json.dumps(arguments, sort_keys=True)
-        if "herbert-agent-ops" in rendered:
-            loaded = True
-            break
+    # New observations require successful, request-correlated delivered bytes.
+    # Historical packets retain their recorded diagnostic; the legacy scorer is unchanged.
+    from .boundary_transport import normalize_export
+    from .boundary_evidence import retrieval
+    from .boundary_tools import loads
+    try:
+        runtime = loads((cell_dir / 'runtime.json').read_text())
+        session = normalize_export(cell_dir / 'session.jsonl', runtime)
+        calls = [c for m in session['messages'] for c in m.get('tool_calls', [])]
+        replies = {m['tool_call_id']:loads(m['content']) for m in session['messages'] if m['role']=='tool'}
+        if len(replies) != len([m for m in session['messages'] if m['role']=='tool']):
+            raise ValueError('duplicate tool replies')
+        observed = retrieval(calls,replies,runtime.get('installed_hashes',{}),[])
+        loaded = observed['successful_retrieval']
+    except (OSError,ValueError,KeyError,TypeError,AttributeError):
+        return {'status':'unavailable','herbert_agent_ops_loaded':False}
     return {"status": "observed" if loaded else "not_observed", "herbert_agent_ops_loaded": loaded}
 
 

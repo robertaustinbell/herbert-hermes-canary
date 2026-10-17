@@ -18,6 +18,17 @@ from herbert_canary.hermes_executor import (
 )
 
 
+def installed_executor(test):
+    selected=os.environ.get('HERMES_CANARY_BIN','hermes')
+    explicit=bool(os.environ.get('HERMES_CANARY_BIN') or os.environ.get('HERMES_CANARY_PYTHON'))
+    try:
+        return HermesExecutor(hermes_bin=selected,hermes_python=os.environ.get('HERMES_CANARY_PYTHON'))
+    except ValueError as exc:
+        if explicit:
+            raise
+        test.skipTest('Unavailable documented runtime shape: '+str(exc))
+
+
 class TraceParsingTests(unittest.TestCase):
     def test_oauth_json_fields_are_redacted(self):
         raw = '{"access_token":"synthetic-not-real","refresh_token": "synthetic-not-real"}'
@@ -56,7 +67,7 @@ class TraceParsingTests(unittest.TestCase):
     def test_runtime_model_configuration_is_seeded_noninteractively(self):
         home = Path(tempfile.mkdtemp()).resolve()
         cell = Path(tempfile.mkdtemp()).resolve()
-        executor = HermesExecutor()
+        executor = installed_executor(self)
         result = executor.configure_runtime(
             home,
             cell,
@@ -68,7 +79,7 @@ class TraceParsingTests(unittest.TestCase):
     def test_synthetic_server_retries_one_transient_connection_failure(self):
         class FlakyExecutor(HermesExecutor):
             def __init__(self):
-                super().__init__(hermes_bin=sys.executable)
+                super().__init__(hermes_bin=sys.executable, hermes_python=sys.executable)
                 self.calls = 0
 
             def _run(self, args, **kwargs):
@@ -91,7 +102,7 @@ class TraceParsingTests(unittest.TestCase):
         cell = Path(tempfile.mkdtemp()).resolve()
         (home / ".no-bundled-skills").write_text("test\n")
         (home / "skills").mkdir()
-        executor = HermesExecutor()
+        executor = installed_executor(self)
         result = executor.register_mcp(home, cell)
         self.assertEqual(result["status"], "passed")
         self.assertTrue((home / "config.yaml").is_file())

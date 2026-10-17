@@ -43,10 +43,9 @@ class FixtureToolTests(unittest.TestCase):
             perform_write_marker(Path("relative"), "test")
 
     def test_server_uses_the_mcp_sdk_shipped_with_hermes(self):
-        hermes = shutil.which("hermes")
-        if not hermes:
-            self.skipTest("Hermes executable unavailable")
-        hermes_python = Path(hermes).parent / "python"
+        from test_hermes_executor import installed_executor
+        executor = installed_executor(self)
+        hermes_python = Path(executor.hermes_python)
         env = os.environ.copy()
         env.pop("HERBERT_FIXTURE_DIR", None)
         result = subprocess.run(
